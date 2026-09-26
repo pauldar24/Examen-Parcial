@@ -1,6 +1,8 @@
 @model List<Incidencia>
 @{
     ViewData["Title"] = "Incidencias";
+    var termino = ViewData["Termino"] as string ?? string.Empty;
+    var hayBusqueda = !string.IsNullOrEmpty(termino);
 }
 
 <style>
@@ -11,10 +13,29 @@
         color: #1f2937;
     }
 
-    .tarjeta-incidencias {
+    .tarjeta-incidencias,
+    .tarjeta-busqueda {
         border: 0;
         border-radius: 1rem;
         overflow: hidden;
+    }
+
+    .barra-busqueda .form-control,
+    .barra-busqueda .btn {
+        transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    }
+
+    .barra-busqueda .form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+    }
+
+    .barra-busqueda .btn-primary:hover,
+    .barra-busqueda .btn-primary:focus {
+        box-shadow: 0 0.4rem 0.9rem rgba(13, 110, 253, 0.35);
+    }
+
+    .barra-busqueda .btn-outline-secondary:hover {
+        box-shadow: 0 0.35rem 0.8rem rgba(108, 117, 125, 0.25);
     }
 
     .cabecera-tabla {
@@ -81,12 +102,37 @@
 
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
             <div>
-                <h1>Incidencias abiertas</h1>
-                <p class="text-secondary mb-0">Incidencias con estado <strong>Abierta</strong> pendientes de cierre.</p>
+                <h1>Incidencias abiertas encontradas</h1>
+                <p class="text-secondary mb-0">
+                    @if (hayBusqueda)
+                    {
+                        <span>Resultados de Algolia para <strong class="text-dark">"@termino"</strong> entre las incidencias abiertas.</span>
+                    }
+                    else
+                    {
+                        <span>Incidencias con estado <strong>Abierta</strong> pendientes de cierre.</span>
+                    }
+                </p>
             </div>
-            <span class="badge rounded-pill text-bg-primary px-3 py-2 align-self-start align-self-md-auto">
+            <span class="badge rounded-pill @(hayBusqueda ? "text-bg-dark" : "text-bg-primary") px-3 py-2 align-self-start align-self-md-auto">
                 @Model.Count @(Model.Count == 1 ? "incidencia" : "incidencias")
             </span>
+        </div>
+
+        <div class="card tarjeta-busqueda shadow-sm mb-4">
+            <div class="card-body">
+                <form asp-controller="Operaciones" asp-action="Incidencias" method="get" class="barra-busqueda row g-2 align-items-end">
+                    <div class="col-12 col-md">
+                        <label class="form-label fw-semibold text-secondary" for="q">Buscar por estacion o descripcion</label>
+                        <input type="search" id="q" name="q" value="@termino" class="form-control"
+                               placeholder="Ej. Estacion Central, torniquetes..." autocomplete="off" />
+                    </div>
+                    <div class="col-12 col-md-auto d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Buscar</button>
+                        <a asp-controller="Operaciones" asp-action="Incidencias" class="btn btn-outline-secondary">Limpiar</a>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="card tarjeta-incidencias shadow-sm">
@@ -95,8 +141,16 @@
                 @if (Model.Count == 0)
                 {
                     <div class="estado-vacio m-4 p-5 text-center">
-                        <h2 class="h5 text-secondary mb-2">No hay incidencias abiertas</h2>
-                        <p class="text-secondary mb-0">Todas las incidencias registradas se encuentran cerradas por el momento.</p>
+                        @if (hayBusqueda)
+                        {
+                            <h2 class="h5 text-secondary mb-2">Sin coincidencias para "@termino"</h2>
+                            <p class="text-secondary mb-0">Prueba con otra estacion o descripcion, o limpia la busqueda para ver todas las abiertas.</p>
+                        }
+                        else
+                        {
+                            <h2 class="h5 text-secondary mb-2">No hay incidencias abiertas</h2>
+                            <p class="text-secondary mb-0">Todas las incidencias registradas se encuentran cerradas por el momento.</p>
+                        }
                     </div>
                 }
                 else

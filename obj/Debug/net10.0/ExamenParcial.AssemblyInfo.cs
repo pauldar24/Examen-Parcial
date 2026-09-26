@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ExamenParcial")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48b7d9ce04535814c2ee37f1d23d7fcb3bcfbdbd")]
 [assembly: System.Reflection.AssemblyProductAttribute("ExamenParcial")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ExamenParcial")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
