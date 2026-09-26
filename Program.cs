@@ -9,6 +9,18 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Redis: la cadena de conexion se lee de la variable de entorno REDIS_CONNECTION
+// y, si no existe, de ConnectionStrings:Redis en appsettings.json.
+var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION")
+    ?? builder.Configuration.GetConnectionString("Redis")
+    ?? "localhost:6379";
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnection;
+    options.InstanceName = "ExamenParcial:";
+});
+
 var app = builder.Build();
 
 // Crea la base de datos SQLite y sus tablas si todavia no existen.

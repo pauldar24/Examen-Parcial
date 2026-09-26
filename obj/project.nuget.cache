@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "l7hU0nl2zRU=",
+  "dgSpecHash": "CVkyxmeXrjI=",
   "success": true,
   "projectFilePath": "C:\\Programacion I\\ExamenParcial\\ExamenParcial.csproj",
   "expectedPackageFiles": [
@@ -21,6 +21,7 @@
     "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\10.0.12\\microsoft.entityframeworkcore.relational.10.0.12.nupkg.sha512",
     "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.entityframeworkcore.sqlite\\10.0.12\\microsoft.entityframeworkcore.sqlite.10.0.12.nupkg.sha512",
     "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.entityframeworkcore.sqlite.core\\10.0.12\\microsoft.entityframeworkcore.sqlite.core.10.0.12.nupkg.sha512",
+    "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.extensions.caching.stackexchangeredis\\10.0.12\\microsoft.extensions.caching.stackexchangeredis.10.0.12.nupkg.sha512",
     "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.extensions.dependencymodel\\10.0.12\\microsoft.extensions.dependencymodel.10.0.12.nupkg.sha512",
     "C:\\Users\\Paul David\\.nuget\\packages\\microsoft.visualstudio.solutionpersistence\\1.0.52\\microsoft.visualstudio.solutionpersistence.1.0.52.nupkg.sha512",
     "C:\\Users\\Paul David\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
