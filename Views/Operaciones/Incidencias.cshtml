@@ -3,6 +3,7 @@
     ViewData["Title"] = "Incidencias";
     var termino = ViewData["Termino"] as string ?? string.Empty;
     var hayBusqueda = !string.IsNullOrEmpty(termino);
+    var degradada = ViewData["Degradada"] as bool? == true;
 }
 
 <style>
@@ -104,7 +105,11 @@
             <div>
                 <h1>Incidencias abiertas con consulta rápida</h1>
                 <p class="text-secondary mb-0">
-                    @if (hayBusqueda)
+                    @if (hayBusqueda && degradada)
+                    {
+                        <span>Busqueda no disponible en Algolia: se muestra el listado local completo de incidencias abiertas.</span>
+                    }
+                    else if (hayBusqueda)
                     {
                         <span>Resultados de Algolia para <strong class="text-dark">"@termino"</strong> entre las incidencias abiertas.</span>
                     }

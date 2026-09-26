@@ -1,5 +1,4 @@
 using Algolia.Search.Clients;
-using Algolia.Search.Exceptions;
 using Algolia.Search.Models.Search;
 using ExamenParcial.Configuration;
 using Microsoft.Extensions.Options;
@@ -28,9 +27,15 @@ public class AlgoliaIncidenciasService : IAlgoliaIncidenciasService
         _client = new SearchClient(settings.Value.AppId, settings.Value.ApiKey);
     }
 
-    public async Task<List<int>> BuscarIdsAsync(string termino, CancellationToken cancellationToken = default)
+    public async Task<List<int>?> BuscarIdsAsync(string termino, CancellationToken cancellationToken = default)
     {
-        if (_client is null || string.IsNullOrWhiteSpace(termino))
+        if (_client is null)
+        {
+            // Sin credenciales: la busqueda degrada a la base de datos local.
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(termino))
         {
             return new List<int>();
         }
@@ -55,10 +60,17 @@ public class AlgoliaIncidenciasService : IAlgoliaIncidenciasService
                 .Select(id => id!.Value)
                 .ToList();
         }
-        catch (AlgoliaException ex)
+        catch (OperationCanceledException)
         {
-            _logger.LogError(ex, "No se pudo consultar el indice '{Indice}' de Algolia.", _indexName);
-            return new List<int>();
+            // Cancelacion de la peticion: no se degrada, se propaga.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Cualquier fallo de Algolia (credenciales invalidas, indice inexistente,
+            // host inaccesible o sin red) degrada a la base de datos local sin error fatal.
+            _logger.LogWarning(ex, "Algolia no respondio al consultar el indice '{Indice}'. La busqueda continua con la base de datos local.", _indexName);
+            return null;
         }
     }
 }

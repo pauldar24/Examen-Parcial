@@ -47,6 +47,15 @@ public class OperacionesController : Controller
         // Con busqueda: Algolia devuelve los objectID que coinciden.
         var ids = await _algolia.BuscarIdsAsync(termino, HttpContext.RequestAborted);
 
+        if (ids is null)
+        {
+            // Algolia no esta disponible: la busqueda degrada al listado local completo.
+            _logger.LogWarning("Busqueda para '{Termino}' degradada a la base de datos local: Algolia no esta disponible.", termino);
+            ViewData["Degradada"] = true;
+
+            return View(await ObtenerListadoAbiertasAsync());
+        }
+
         // De esos ids solo se muestran los que siguen Abiertas en la base de datos local.
         var coincidencias = await _context.Incidencias
             .Where(i => i.Estado == "Abierta" && ids.Contains(i.Id))
