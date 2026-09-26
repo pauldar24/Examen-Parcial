@@ -1,0 +1,35 @@
+# Artefactos de compilacion
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Control de versiones y CI
+.git/
+.gitignore
+.github/
+.vs/
+.vscode/
+.idea/
+
+# Base de datos local (se crea sola dentro del contenedor)
+*.db
+*.db-shm
+*.db-wal
+
+# Claves y secretos: NUNCA deben entrar en la imagen
+**/appsettings.Production.json
+**/*.user
+*.pfx
+.env
+.env.*
+
+# Pruebas y documentación
+**/Tests/
+**/*.Tests/
+*.md
+docs/
+
+# Sistema operativo y editores
+**/.DS_Store
+Thumbs.db
