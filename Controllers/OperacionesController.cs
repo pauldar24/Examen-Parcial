@@ -75,29 +75,49 @@ public class OperacionesController : Controller
 
     private async Task<List<Incidencia>> ObtenerListadoAbiertasAsync()
     {
-        var contenidoCache = await _cache.GetStringAsync(ClaveListadoAbiertas);
-
-        if (contenidoCache is not null)
+        try
         {
-            _logger.LogInformation("Listado de incidencias abierto LEIDO DESDE REDIS (cache).");
+            var contenidoCache = await _cache.GetStringAsync(ClaveListadoAbiertas);
 
-            return JsonSerializer.Deserialize<List<Incidencia>>(contenidoCache) ?? new List<Incidencia>();
+            if (contenidoCache is not null)
+            {
+                var listadoCacheado = JsonSerializer.Deserialize<List<Incidencia>>(contenidoCache);
+
+                if (listadoCacheado is not null)
+                {
+                    _logger.LogInformation("Listado de incidencias abierto LEIDO DESDE REDIS (cache).");
+
+                    return listadoCacheado;
+                }
+            }
+
+            _logger.LogInformation("Listado de incidencias abierto LEIDO DESDE LA BASE DE DATOS (no existia en Redis).");
         }
-
-        _logger.LogInformation("Listado de incidencias abierto LEIDO DESDE LA BASE DE DATOS (no existia en Redis).");
+        catch (Exception ex)
+        {
+            // Redis caido, sin respuesta o clave corrupta: se degrada a la base de datos local.
+            _logger.LogWarning(ex, "No se pudo leer el cache de Redis. Se usara la base de datos local.");
+        }
 
         var incidencias = await _context.Incidencias
             .Where(i => i.Estado == "Abierta")
             .OrderBy(i => i.Id)
             .ToListAsync();
 
-        await _cache.SetStringAsync(
-            ClaveListadoAbiertas,
-            JsonSerializer.Serialize(incidencias),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = DuracionCache
-            });
+        try
+        {
+            await _cache.SetStringAsync(
+                ClaveListadoAbiertas,
+                JsonSerializer.Serialize(incidencias),
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = DuracionCache
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudo escribir el listado en Redis. La consulta se completo con la base de datos local.");
+        }
 
         return incidencias;
     }
@@ -109,8 +129,17 @@ public class OperacionesController : Controller
         var incidencia = await _context.Incidencias.FindAsync(id);
 
         // La clave del listado se invalida y elimina ANTES de guardar los cambios en la base de datos.
-        await _cache.RemoveAsync(ClaveListadoAbiertas);
-        _logger.LogInformation("Clave de cache '{Clave}' eliminada de Redis antes de guardar los cambios.", ClaveListadoAbiertas);
+        try
+        {
+            await _cache.RemoveAsync(ClaveListadoAbiertas);
+            _logger.LogInformation("Clave de cache '{Clave}' eliminada de Redis antes de guardar los cambios.", ClaveListadoAbiertas);
+        }
+        catch (Exception ex)
+        {
+            // Si Redis no responde, el cierre sigue guardandose en la base de datos;
+            // el listado volvera a consultarse desde ella en la siguiente peticion.
+            _logger.LogWarning(ex, "No se pudo eliminar la clave '{Clave}' de Redis. El cierre se guardara solo en la base de datos.", ClaveListadoAbiertas);
+        }
 
         if (incidencia != null)
         {

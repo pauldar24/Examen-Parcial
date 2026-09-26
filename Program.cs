@@ -2,6 +2,8 @@ using ExamenParcial.Configuration;
 using ExamenParcial.Data;
 using ExamenParcial.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,19 +15,50 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.Configure<AlgoliaSettings>(builder.Configuration.GetSection(AlgoliaSettings.SectionName));
 builder.Services.AddSingleton<IAlgoliaIncidenciasService, AlgoliaIncidenciasService>();
-// Redis: la cadena de conexion se lee de la variable de entorno REDIS_CONNECTION
-// y, si no existe, de ConnectionStrings:Redis en appsettings.json.
-var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION")
-    ?? builder.Configuration.GetConnectionString("Redis")
-    ?? "localhost:6379";
 
-builder.Services.AddStackExchangeRedisCache(options =>
+// Redis: la configuracion puede llegar como URL (redis:// / rediss://), como cadena
+// nativa de StackExchange.Redis o como variables separadas por host, puerto y clave.
+var redis = RedisConfiguracionResolver.Resolver(builder.Configuration);
+Exception? errorRegistroRedis = null;
+
+if (redis.Habilitado)
 {
-    options.Configuration = redisConnection;
-    options.InstanceName = "ExamenParcial:";
-});
+    try
+    {
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.ConfigurationOptions = redis.Opciones;
+            options.InstanceName = "ExamenParcial:";
+        });
+    }
+    catch (Exception ex)
+    {
+        // Si el registro falla, la app sigue con cache en memoria.
+        errorRegistroRedis = ex;
+    }
+}
+
+if (errorRegistroRedis is not null || !redis.Habilitado)
+{
+    // Respaldo: cache en memoria. Nunca se propagan errores de Redis al arrancar.
+    builder.Services.RemoveAll<IDistributedCache>();
+    builder.Services.AddDistributedMemoryCache();
+}
 
 var app = builder.Build();
+
+if (errorRegistroRedis is not null)
+{
+    app.Logger.LogError(errorRegistroRedis, "No se pudo registrar el cache de Redis. Se usara cache en memoria y la base de datos local.");
+}
+else if (redis.Habilitado)
+{
+    app.Logger.LogInformation("Cache de Redis habilitado, configuracion obtenida de: {Origen}.", redis.Origen);
+}
+else
+{
+    app.Logger.LogWarning("Redis no disponible ({Diagnostico}). Se usara cache en memoria y la base de datos local.", redis.Diagnostico);
+}
 
 // Crea la base de datos SQLite y sus tablas si todavia no existen.
 using (var scope = app.Services.CreateScope())
