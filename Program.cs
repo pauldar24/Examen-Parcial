@@ -1,6 +1,5 @@
 using ExamenParcial.Configuration;
 using ExamenParcial.Data;
-using ExamenParcial.Models;
 using ExamenParcial.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +13,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.Configure<AlgoliaSettings>(builder.Configuration.GetSection(AlgoliaSettings.SectionName));
 builder.Services.AddSingleton<IAlgoliaIncidenciasService, AlgoliaIncidenciasService>();
+// Redis: la cadena de conexion se lee de la variable de entorno REDIS_CONNECTION
+// y, si no existe, de ConnectionStrings:Redis en appsettings.json.
+var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION")
+    ?? builder.Configuration.GetConnectionString("Redis")
+    ?? "localhost:6379";
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnection;
+    options.InstanceName = "ExamenParcial:";
+});
 
 var app = builder.Build();
 
@@ -22,16 +32,6 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
-
-    if (!context.Incidencias.Any())
-    {
-        context.Incidencias.AddRange(
-            new Incidencia { Estacion = "Estacion Central", Descripcion = "Torniquetes sin lectura de tarjeta", Prioridad = "Alta" },
-            new Incidencia { Estacion = "Estacion Norte", Descripcion = "Falla en la iluminacion del anden", Prioridad = "Media" },
-            new Incidencia { Estacion = "Estacion Sur", Descripcion = "Basura acumulada en la salida", Prioridad = "Baja" },
-            new Incidencia { Estacion = "Estacion Central", Descripcion = "Panel de horario desactualizado", Prioridad = "Media" });
-        context.SaveChanges();
-    }
 }
 
 // Configure the HTTP request pipeline.
