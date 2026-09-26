@@ -1,8 +1,11 @@
-# Artefactos de compilacion
+# Artefactos de compilacion: NUNCA deben entrar al contexto de build.
+# Si se cuelan, el project.assets.json de Windows pisa al del contenedor
+# y la compilacion falla con NETSDK1064 / NETSDK1005.
 **/bin/
 **/obj/
 **/out/
 **/publish/
+**/TestResults/
 
 # Control de versiones y CI
 .git/
